@@ -13,3 +13,6 @@ tokio = { version = "0.3", features = ["full"] }
 chrono = "0.4.19"
 #sha3加密包
 tiny-keccak = { version = "2.0", features = ["sha3"] }
+#大数包，用来做u256比对
+num-bigint = "0.3"
+num-traits = "0.2"
