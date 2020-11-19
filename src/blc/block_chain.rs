@@ -75,29 +75,39 @@ impl BlockChain {
         let collection = db.collection(super::DATA_COLLECTION);
 
         let find_cursor = collection.find(None,FindOptions::default()).unwrap();
-        let vec_doc : Vec<mongodb::error::Result<bson::Document>> = find_cursor.collect();
+        let mut vec_doc: Vec<mongodb::error::Result<bson::Document>> = find_cursor.collect();
 
         if vec_doc.is_empty() {
             println!("the database is empty");
         } else {
-            let find_doc = vec_doc.last().unwrap().as_ref().unwrap();
-
-            let mut block_chain = BlockChain{ tip: find_doc.get("key").unwrap().to_string() };
-
             // 遍历区块链
-            let mut iter = block_chain.clone().into_iter();
-            loop {
-                match iter.next(){
-                    None => break,
-                    Some(b) => {
-                        println!("{}",b);
-                        let mut blc = block_chain.clone();
-                        blc.tip = BigUint::from_bytes_be(b.prev_block_hash.as_slice()).to_str_radix(16);
-                        iter = blc.into_iter();
-                    }
-                }
-
+            vec_doc.reverse();
+            for result in vec_doc {
+                let doc = result.unwrap();
+                let bs = doc.get("value").cloned().unwrap();
+                let binary = bson::from_bson::<bson::Binary>(bs).unwrap();
+                let block = serde_json::from_slice::<Block>(binary.bytes.as_slice()).expect("Deserialize block err");
+                println!("{}",block);
             }
+            
+            //不知道为什么不好用
+            // let find_doc = vec_doc.last().unwrap().as_ref().unwrap();
+            // println!("{}",find_doc.get("key").unwrap().to_string());
+            // let mut block_chain = BlockChain{ tip: find_doc.get("key").unwrap().to_string() };
+            // println!("{}",block_chain);
+            // let mut iter = block_chain.clone().into_iter();
+            // loop {
+            //     match iter.next(){
+            //         None => break,
+            //         Some(b) => {
+            //             println!("{}",b);
+            //             let mut blc = block_chain.clone();
+            //             blc.tip = BigUint::from_bytes_be(b.prev_block_hash.as_slice()).to_str_radix(16);
+            //             iter = blc.into_iter();
+            //         }
+            //     }
+            // 
+            // }
         }
     }
 }
@@ -118,8 +128,9 @@ impl Iterator for BlockChain{
 
         //获取blockchain的hash来从库中找寻block
         let hash = self.tip.as_str();
-        let op :Option<bson::Document> = collection.find_one(doc!["key":hash], FindOneOptions::default()).unwrap();
-
+        let mut doc = bson::Document::new();
+        doc.insert("key",hash);
+        let op :Option<bson::Document> = collection.find_one(doc, FindOneOptions::default()).unwrap();
         //找不到直接返回none，迭代结束
         return match op {
             None =>Option::None,
@@ -128,6 +139,7 @@ impl Iterator for BlockChain{
                 let bs = find_doc.get("value").cloned().unwrap();
                 let binary = bson::from_bson::<bson::Binary>(bs).unwrap();
                 let block = serde_json::from_slice::<Block>(binary.bytes.as_slice()).expect("Deserialize block err");
+                println!("{}",block);
                 Option::Some(block)
             }
         }
