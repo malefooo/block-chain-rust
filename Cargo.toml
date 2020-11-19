@@ -16,3 +16,18 @@ tiny-keccak = { version = "2.0", features = ["sha3"] }
 #大数包，用来做u256比对
 num-bigint = "0.3"
 num-traits = "0.2"
+#数据库，过于痛苦，在win10下，编译grpcio-sys的时候会出现汇编编译不通过，64位不支持的情况，即使更新了nasm为64位的也不通过，实在苦恼，先不使用数据库了
+#tikv-client = { git = "https://github.com/tikv/client-rust.git" }
+
+once_cell = "1.4.0"
+#json工具，通过json来序列化和反序列化
+serde_json = "1.0.44"
+serde = { version = "1.0.44", features = ["derive"] }
+
+#db
+[dependencies.mongodb]
+version = "1.1.1"
+default-features = false
+features = ["sync"]
+#redis = "0.17.0" redis的异步包不太适合，换成mongodb
+#单例工具，保存全局
